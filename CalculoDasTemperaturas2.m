@@ -1,0 +1,104 @@
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % SIMULACAO TERMICA DO COMPRESSOR
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  clc;
+  clear all;
+
+  %Dados de Entrada
+  freq = 50;
+  Tevap=-10+273.15;
+  Tcond=54.4+273.15;
+  Tsl=43+273.15;
+  Tamb=43+273.15;
+  pevap=(py.CoolProp.CoolProp.PropsSI('P','T',Tevap,'Q',0,'Propane'));
+  pcond=(py.CoolProp.CoolProp.PropsSI('P','T',Tcond,'Q',1,'Propane'));
+  hsl=(py.CoolProp.CoolProp.PropsSI('H','T',Tsl,'P',pevap,'Propane'));
+  
+  
+  %Condutancias - obtidas de calibracao dados experimentais
+  UAdc_ie=-0.0074*(Tevap-273.15)+0.2372;%0.4333;%0.6077;
+  UAie_sm=0.0211*(Tevap-273.15)+1.4114;%0.9025;%0.9020;
+  UAdm_ie=0.0124*(Tevap-273.15)+0.8859;%0.5958;%0.3745;
+  UAdl_ie=0.006*(Tevap-273.15)+1.0934;%0.9110;%1.1158;
+  UAmot_oil=0.1184*(Tevap-273.15)+6.5417;%3.4590;%3.4271;
+  UAoil_shell=0.3451*(Tevap-273.15)+19.492;%11.4710;%9.0187;
+  UAie_shell=0.0522*(Tevap-273.15)+8.1267;%7.5357;%9.0942;
+  UAshell_amb=0.0037*(Tevap-273.15)+2.1929;%2.1144;%2.1152;
+  
+  mdot=4.651/3600;
+  pot_ele=207;
+  efic=0.7592;
+  Qb=9; %perda mecanica
+ 
+%Inicialização
+
+  x1 = zeros(8,1); %Vetor solução
+  oldx = zeros(8,1); %Vetor armazenador
+  aux = ones(8,1); %Vetor armazenador 2
+  dx = zeros(8,1); %Vetor incrementador
+  J = zeros(8,8); %Matriz jacobiana
+  
+  iterCoup = 0;
+  
+% Estimativa inicial e número máximo de iterações
+  x1 = [300;300;300;300;300;300;300;300]; %Vetor solução
+  it = 100;
+  Qtro =50;  
+  hiini = 100;
+  div = 100; %numero de divisoes do TRO
+  weigth = 0.35; %fator de subrelaxacao
+  
+  %Campo de temperatura inicial - obtencao de Q e Qmot
+while ((max(abs(x1-aux)) > 0.01) && (iterCoup < it))
+    Qtroo = Qtro;
+    aux = x1;
+    iterCoup = iterCoup + 1;
+    res = ones(8,1); %Vetor resíduo
+    iterNR = 0;
+while ((max(abs(res)) > 0.001) && (iterNR < it))
+    iterNR = iterNR + 1;
+     
+  %Escrever as equações na forma f(x) = 0
+  res(1)=UAie_sm*(x1(2)-(0.5*(x1(1)+Tsl)))-mdot*((py.CoolProp.CoolProp.PropsSI('H','T',x1(1),'P',pevap,'Propane'))-hsl);
+  res(2)=UAmot_oil*(x1(6)-x1(7))-(1-efic)*pot_ele;
+  res(3)=UAdc_ie*(x1(3)-x1(2))+mdot*((py.CoolProp.CoolProp.PropsSI('H','T',x1(3),'P',pcond,'Propane'))-(((efic*pot_ele-Qb)/mdot)+(py.CoolProp.CoolProp.PropsSI('H','T',x1(1),'P',pevap,'Propane'))));
+  res(4)=UAdm_ie*(0.5*(x1(4)+x1(3))-x1(2))+mdot*((py.CoolProp.CoolProp.PropsSI('H','T',x1(4),'P',pcond,'Propane'))-(py.CoolProp.CoolProp.PropsSI('H','T',x1(3),'P',pcond,'Propane')));
+  res(5)=UAdl_ie*(0.5*(x1(5)+x1(4))-x1(2))+mdot*((py.CoolProp.CoolProp.PropsSI('H','T',x1(5),'P',pcond,'Propane'))-(py.CoolProp.CoolProp.PropsSI('H','T',x1(4),'P',pcond,'Propane')));
+  res(6)=UAmot_oil*(x1(6)-x1(7))-UAoil_shell*(x1(7)-x1(8))-Qtro+Qb;
+  res(7)=UAoil_shell*(x1(7)-x1(8))+UAie_shell*(x1(2)-x1(8))-UAshell_amb*(x1(8)-Tamb);
+  res(8)=UAdc_ie*(x1(3)-x1(2))+UAdm_ie*((0.5*(x1(4)+x1(3)))-x1(2))+UAdl_ie*((0.5*(x1(5)+x1(4)))-x1(2))+UAie_shell*(x1(8)-x1(2))+UAie_sm*((0.5*(Tsl+x1(1)))-x1(2));
+
+  %Matriz jacobiana de derivadas parciais
+  for i = 1:8
+  oldx(i) = x1(i);
+  x1(i) = x1(i)*1.0001;
+  J(1,i) = (UAie_sm*(x1(2)-(0.5*(x1(1)+Tsl)))-mdot*((py.CoolProp.CoolProp.PropsSI('H','T',x1(1),'P',pevap,'Propane'))-hsl) - res(1))/(x1(i) - oldx(i));
+  J(2,i) = (UAmot_oil*(x1(6)-x1(7))-(1-efic)*pot_ele - res(2))/(x1(i) - oldx(i));
+  J(3,i) = (UAdc_ie*(x1(3)-x1(2))+mdot*((py.CoolProp.CoolProp.PropsSI('H','T',x1(3),'P',pcond,'Propane'))-(((efic*pot_ele-Qb)/mdot)+(py.CoolProp.CoolProp.PropsSI('H','T',x1(1),'P',pevap,'Propane')))) - res(3))/(x1(i) - oldx(i));
+  J(4,i) = (UAdm_ie*(0.5*(x1(4)+x1(3))-x1(2))+mdot*((py.CoolProp.CoolProp.PropsSI('H','T',x1(4),'P',pcond,'Propane'))-(py.CoolProp.CoolProp.PropsSI('H','T',x1(3),'P',pcond,'Propane'))) - res(4))/(x1(i) - oldx(i));
+  J(5,i) = (UAdl_ie*(0.5*(x1(5)+x1(4))-x1(2))+mdot*((py.CoolProp.CoolProp.PropsSI('H','T',x1(5),'P',pcond,'Propane'))-(py.CoolProp.CoolProp.PropsSI('H','T',x1(4),'P',pcond,'Propane'))) - res(5))/(x1(i) - oldx(i));
+  J(6,i) = (UAmot_oil*(x1(6)-x1(7))-UAoil_shell*(x1(7)-x1(8))-Qtro+Qb - res(6))/(x1(i) - oldx(i));
+  J(7,i) = (UAoil_shell*(x1(7)-x1(8))+UAie_shell*(x1(2)-x1(8))-UAshell_amb*(x1(8)-Tamb)-res(7))/(x1(i) - oldx(i));
+  J(8,i) = (UAdc_ie*(x1(3)-x1(2))+UAdm_ie*((0.5*(x1(4)+x1(3)))-x1(2))+UAdl_ie*((0.5*(x1(5)+x1(4)))-x1(2))+UAie_shell*(x1(8)-x1(2))+UAie_sm*((0.5*(Tsl+x1(1)))-x1(2))- res(8))/(x1(i) - oldx(i));
+  x1(i) = oldx(i);
+  end
+
+dx = J\res; % Solução do Sistema Linear
+x1 = x1 - dx; % Atualização das variáveis
+end
+
+%Chama a funcao TRO para resolver o trocador de calor
+[Qtro, titulo, hint, ho, dhevap, storex, storeh, storeBo, storeCo, storePhi, storeZ]= TRO2(mdot, Tcond, x1(7), freq, hiini, div, hsl);
+Qtro = weigth*Qtro + (1-weigth)*Qtroo;
+end
+
+  Qtro
+  titulo
+  hint
+  ho
+  dhevap
+  iterCoup
+  Tmot=x1(6)-273.15
+  Toil=x1(7)-273.15
+  
+  %1 sc, 2 ie, 3 dc, 4 dm, 5 dl, 6 mot, 7 oil, 8 shell 
