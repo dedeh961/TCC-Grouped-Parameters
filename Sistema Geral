@@ -30,9 +30,9 @@
   efic=0.7592;
   Qb=9; %perda mecanica
  
-%Inicialização
+%InicializaÃ§Ã£o
 
-  x1 = zeros(8,1); %Vetor solução
+  x1 = zeros(8,1); %Vetor soluÃ§Ã£o
   oldx = zeros(8,1); %Vetor armazenador
   aux = ones(8,1); %Vetor armazenador 2
   dx = zeros(8,1); %Vetor incrementador
@@ -40,8 +40,8 @@
   
   iterCoup = 0;
   
-% Estimativa inicial e número máximo de iterações
-  x1 = [300;300;300;300;300;300;300;300]; %Vetor solução
+% Estimativa inicial e nÃºmero mÃ¡ximo de iteraÃ§Ãµes
+  x1 = [300;300;300;300;300;300;300;300]; %Vetor soluÃ§Ã£o
   it = 100;
   Qtro =50;  
   hiini = 100;
@@ -53,12 +53,12 @@ while ((max(abs(x1-aux)) > 0.01) && (iterCoup < it))
     Qtroo = Qtro;
     aux = x1;
     iterCoup = iterCoup + 1;
-    res = ones(8,1); %Vetor resíduo
+    res = ones(8,1); %Vetor resÃ­duo
     iterNR = 0;
 while ((max(abs(res)) > 0.001) && (iterNR < it))
     iterNR = iterNR + 1;
      
-  %Escrever as equações na forma f(x) = 0
+  %Escrever as equaÃ§Ãµes na forma f(x) = 0
   res(1)=UAie_sm*(x1(2)-(0.5*(x1(1)+Tsl)))-mdot*((py.CoolProp.CoolProp.PropsSI('H','T',x1(1),'P',pevap,'Propane'))-hsl);
   res(2)=UAmot_oil*(x1(6)-x1(7))-(1-efic)*pot_ele;
   res(3)=UAdc_ie*(x1(3)-x1(2))+mdot*((py.CoolProp.CoolProp.PropsSI('H','T',x1(3),'P',pcond,'Propane'))-(((efic*pot_ele-Qb)/mdot)+(py.CoolProp.CoolProp.PropsSI('H','T',x1(1),'P',pevap,'Propane'))));
@@ -83,8 +83,8 @@ while ((max(abs(res)) > 0.001) && (iterNR < it))
   x1(i) = oldx(i);
   end
 
-dx = J\res; % Solução do Sistema Linear
-x1 = x1 - dx; % Atualização das variáveis
+dx = J\res; % SoluÃ§Ã£o do Sistema Linear
+x1 = x1 - dx; % AtualizaÃ§Ã£o das variÃ¡veis
 end
 
 %Chama a funcao TRO para resolver o trocador de calor
