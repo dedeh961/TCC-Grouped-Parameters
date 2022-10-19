@@ -91,7 +91,7 @@ end
 [Qtro, titulo, hint, ho, dhevap, storex, storeh, storeBo, storeCo, storePhi, storeZ]= TRO2(mdot, Tcond, x1(7), freq, hiini, div, hsl);
 Qtro = weigth*Qtro + (1-weigth)*Qtroo;
 end
-
+%Resultados para print
   Qtro
   titulo
   hint
@@ -101,4 +101,4 @@ end
   Tmot=x1(6)-273.15
   Toil=x1(7)-273.15
   
-  %1 sc, 2 ie, 3 dc, 4 dm, 5 dl, 6 mot, 7 oil, 8 shell 
+  %Legenda 1 sc, 2 ie, 3 dc, 4 dm, 5 dl, 6 mot, 7 oil, 8 shell 
