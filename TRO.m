@@ -82,7 +82,7 @@ for j = 1:div
     iterx1 = 0;
     x1old = 0;
     z = z + dL;
-%Calcular o coeficiente de troca de calor com base em Shah1982
+%Calcular o novo título de entrada no compresor x1 com base em Shah1982
 while ((abs(x(1)-x1old) > 0.00001) && (iterx1 < 2000))
     x1old = x(1);
     iterx1 = iterx1 + 1; %contador
